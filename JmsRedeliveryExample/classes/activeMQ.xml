@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:ejb="http://www.mulesoft.org/schema/mule/ejb"
+      xmlns:file="http://www.mulesoft.org/schema/mule/file"
+      xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:https="http://www.mulesoft.org/schema/mule/https"
+      xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+      xmlns:xmpp="http://www.mulesoft.org/schema/mule/xmpp"
+      xmlns:client="http://www.mulesoft.org/schema/mule/client"
+      xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf"
+      xmlns:jbossts="http://www.mulesoft.org/schema/mule/jbossts"
+      xmlns:mule-xml="http://www.mulesoft.org/schema/mule/xml"
+      xmlns:amq="http://activemq.apache.org/schema/core"
+    xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.1/mule.xsd
+        http://www.mulesoft.org/schema/mule/ejb http://www.mulesoft.org/schema/mule/ejb/3.1/mule-ejb.xsd
+        http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/3.1/mule-file.xsd
+        http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/3.1/mule-ftp.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/3.1/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/3.1/mule-https.xsd
+        http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/3.1/mule-jms.xsd
+        http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/3.1/mule-vm.xsd
+        http://www.mulesoft.org/schema/mule/xmpp http://www.mulesoft.org/schema/mule/xmpp/3.1/mule-xmpp.xsd
+        http://www.mulesoft.org/schema/mule/client http://www.mulesoft.org/schema/mule/client/3.1/mule-client.xsd
+        http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/3.1/mule-cxf.xsd
+        http://www.mulesoft.org/schema/mule/jbossts http://www.mulesoft.org/schema/mule/jbossts/3.1/mule-jbossts.xsd
+        http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/3.1/mule-xml.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+    <description>
+    	Application launches an ActiveMQ broker, reachable at tcp://localhost:61616
+    </description>
+
+
+	<spring:beans>
+		<amq:broker id="AMQBroker" useJmx="true" persistent="true"
+			useShutdownHook="false" destroyApplicationContextOnShutdown="true">
+			
+			<amq:destinationPolicy>
+                <amq:policyMap>
+                    <amq:policyEntries>
+                        <amq:policyEntry queue="SBP.>">
+                            <amq:deadLetterStrategy>
+                                <amq:individualDeadLetterStrategy queuePrefix="DLQ." useQueueForQueueMessages="true"/>                                
+                            </amq:deadLetterStrategy>
+                        </amq:policyEntry>
+                    </amq:policyEntries>
+                </amq:policyMap>
+            </amq:destinationPolicy>
+			<amq:managementContext>
+				<amq:managementContext createConnector="false">
+				</amq:managementContext>
+			</amq:managementContext>
+			<amq:transportConnectors>
+				<amq:transportConnector uri="tcp://localhost:61616" />
+				<amq:transportConnector uri="vm://localhost" />
+			</amq:transportConnectors>
+		</amq:broker>
+
+		<amq:connectionFactory id="jmsFactoryCore"
+			brokerURL="vm://localhost" />
+
+	</spring:beans>
+
+</mule>

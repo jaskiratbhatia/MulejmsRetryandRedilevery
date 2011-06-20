@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:spring="http://www.springframework.org/schema/beans"
+  xmlns:ss="http://www.springframework.org/schema/security"
+  xmlns:https="http://www.mulesoft.org/schema/mule/https"
+  xmlns:xm="http://www.mulesoft.org/schema/mule/xml"
+ xmlns:jbossts="http://www.mulesoft.org/schema/mule/jbossts"
+  xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+  xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+    http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.1/mule.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.0.xsd
+          http://www.mulesoft.org/schema/mule/jbossts http://www.mulesoft.org/schema/mule/jbossts/3.1/mule-jbossts.xsd
+    http://www.mulesoft.org/schema/mule/https http://www.mulesource.org/schema/mule/https/3.1/mule-https.xsd
+    http://www.mulesoft.org/schema/mule/xml http://www.mulesource.org/schema/mule/xml/3.1/mule-xml.xsd
+    http://www.mulesoft.org/schema/mule/jms http://www.mulesource.org/schema/mule/jms/3.1/mule-jms.xsd">
+
+	
+	<spring:beans>
+		<!-- ActiveMQ -->
+		<spring:bean id="redeliveryPolicy" class="org.apache.activemq.RedeliveryPolicy">
+			<spring:property name="maximumRedeliveries" value="5"/>
+			<spring:property name="initialRedeliveryDelay" value="5000"/>
+						<spring:property name="redeliveryDelay" value="2000"/>
+			<spring:property name="useExponentialBackOff" value="false"/>
+			<spring:property name="backOffMultiplier" value="2"/>
+
+		</spring:bean>
+		<spring:bean id="amqFactory" class="org.apache.activemq.ActiveMQConnectionFactory" lazy-init="true">
+			<spring:property name="brokerURL" value="failover:(tcp://localhost:61616)" />
+			<spring:property name="redeliveryPolicy" ref="redeliveryPolicy">
+			
+			</spring:property>
+		</spring:bean>
+	</spring:beans>
+
+	<jms:activemq-connector name="jmsConnector" connectionFactory-ref="amqFactory" maxRedelivery="5" persistentDelivery="true" specification="1.1">
+		
+	</jms:activemq-connector>
+	
+
+	<flow name="JMSRedeliver">
+		<jms:inbound-endpoint queue="in" connector-ref="jmsConnector">
+				<jms:transaction action="ALWAYS_BEGIN"/>
+				</jms:inbound-endpoint>
+					<component class="org.mule.example.echo.TestComponent"/>
+			<jms:outbound-endpoint topic="topic1" connector-ref="jmsConnector">
+						<jms:transaction action="ALWAYS_JOIN"/>
+				  </jms:outbound-endpoint>	
+				  
+		<default-exception-strategy>
+  			<commit-transaction exception-pattern="*"/>
+  			<rollback-transaction exception-pattern="org.exceptions.MyException"/>
+		</default-exception-strategy>
+	</flow>
+</mule>
